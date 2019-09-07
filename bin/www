@@ -1,0 +1,199 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var app = require('../app');
+var debug = require('debug')('product:server');
+var http = require('http');
+var myFunc = require('../myModule/module')
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+var server = http.createServer(app);
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+
+server.on('error', onError);
+server.on('listening', onListening);
+
+/**
+ * 
+ * Start Scoket.io Connection
+ */
+// chat member Array.
+participant = [];
+
+var io = require('socket.io').listen(server);
+chat = io.sockets.on('connection', function(client) {
+
+  client.emit('inputRoom');
+
+  // クライアントに接続成功を送信する
+  client.on('checkRoom', function(user){
+    clientsNum = 0;
+    
+    // 指定されたRoomの人数を調べる
+    io.of('/').in(user.room).clients(function(error,clients){
+      if(error) throw err;
+      clientsNum = clients.length;
+
+        // Room入室処理
+        if(myFunc.checkRoom(user.room) 
+          && myFunc.checkName(user.name)){
+            
+          // Room人数が制限に引っかかっているか
+          if(!myFunc.checkRoomClients(clientsNum)) {
+            // 定員オーバーならDisconnect
+            client.emit('overCapacity')
+            client.disconnect(true);
+            console.log('Room: ' + user.room + 'is Capacity Over');
+            return;
+          }
+
+          // server側に保存
+          client.name = user.name;
+          client.room = user.room;
+
+          // room入室者の追加
+          participant.push(client.name);
+
+          //room入室
+          client.join(client.room);
+          console.log('member : ' + participant);
+          
+          // 入室メッセージの表示
+          var enterMsg = myFunc.checkInRoomMsg(client.room, client.name);
+          chat.to(client.room).emit('chat', {
+            msg : enterMsg, 
+            name: participant, 
+            state: 'Enter', 
+            classify: 'System'
+          });
+
+          console.log("Entering " + client.name + " Room No." + client.room);
+
+          // キャンセルボタンをクリック
+        } else if(user.name === null){
+          client.disconnect(true);
+          
+          // 再度入力させる
+        } else {
+          client.emit('inputRoom');
+        }
+    });
+  });
+
+  // クライアントの発言
+  client.on('chat', function(msg){
+      if(myFunc.checkMsgString(msg) && myFunc.checkMsgLength(msg) && myFunc.checkMsgSpace(msg)){
+
+          // 現在時刻の取得
+          var time = myFunc.getNow();
+
+          // Roomのクライアントにメッセージを送信
+          chat.to(client.room).emit('chat', 
+            {msg : time + ' ' + client.name + ' > ' + msg, 
+              name : client.name,
+              classify: 'User'
+          });
+      }
+  });
+
+  // クライアントの退室
+  client.on('disconnect', function() {
+      client.leave(client.room);
+
+      // 退室メッセージの表示
+      var leaveMsg = myFunc.checkLeaveRoomMsg(client.room, client.name);
+      var nameIndex = participant.indexOf(client.name);
+      if (nameIndex > -1) participant.splice(nameIndex, 1);
+
+      chat.to(client.room).emit('chat', {
+        msg : leaveMsg, 
+        name: participant, 
+        state: 'Leave',
+        classify: 'System'
+      });
+      console.log("Leave " + client.name + " from Room No." + client.room);
+  });
+
+  // クライアントの接続種類の応答
+  client.on('method', function(){
+    var method = client.conn.transport.readyState;
+    chat.emit('websocket', method);
+  })
+});
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}

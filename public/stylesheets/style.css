@@ -1,0 +1,113 @@
+* {
+  color: #BBB;
+}
+
+body {
+	background: #282c2f;
+	font-size: 14px;
+	font-family: "游ゴシック Medium",YuGothic,YuGothicM,"Hiragino Kaku Gothic ProN","Hiragino Kaku Gothic Pro",メイリオ,Meiryo,sans-serif,"Font Awesome 5 Free";
+	padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.container {
+  width: 700px;
+  margin:0 10px;
+}
+
+/* Message Form */
+#form {
+  margin: 0 auto;
+}
+
+#input {
+  width: 700px;
+  padding: 10px;
+  background: #282c2f;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 5px;
+  border:1px solid #AAA;
+}
+
+#btn {
+  margin: 10px 0;
+  display: block;
+  text-transform: uppercase;
+  font-weight: bold;
+  background: #282c2f;
+  border-radius: 5px;
+  border: 1px solid #AAA;
+  height: 30px;
+}
+
+#btn:hover {
+  background: #27252A;
+}
+/* Chat Style */
+.messageArea {
+  width: 700px;
+  height: 620px;
+  display: block;
+  background: #282c2f;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+::-webkit-scrollbar{
+  width: 10px;
+}
+::-webkit-scrollbar-track{
+  background: #fff;
+  border-left: solid 1px #ececec;
+}
+::-webkit-scrollbar-thumb{
+  background: #ccc;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 2px #fff;
+}
+
+ul {
+  list-style: none;
+  text-align: left;
+  padding: 0px;
+}
+
+li {
+  margin: 5px 0;
+  border-radius: 5px;
+}
+
+#system {
+  color:#F0E68C;
+  border-radius: 5px;
+}
+
+#me {
+  background: #31363a;
+  border-radius: 5px;
+}
+
+#msg {
+  border-radius: 5px;
+}
+
+/* Display Member Area */
+
+.clients {
+  width: 150px;
+  height: 700px;
+  margin:0 10px;
+  border-radius: 5px;
+  border:1px solid #BBB;
+  padding-left: 5px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.clients > p {
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
