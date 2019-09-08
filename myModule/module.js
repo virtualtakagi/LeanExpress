@@ -1,6 +1,4 @@
-const mongodb = require('mongodb');
-const MongoClient = mongodb.MongoClient;
-const assert = require('assert');
+const mongoose = require('mongoose');
 
 module.exports.checkName = function(name){
     if((name === null) 
@@ -64,10 +62,17 @@ module.exports.getNow = function(){
     return time;
 }
 
-module.exports.connDb = function(){
-    MongoClient.connect('mongodb://127.0.0.1:27017/myDB', (err, db) => {
-    assert.equal(null, err)
-    console.log("Connected successfully to server")
-    db.close()
+module.exports.connectDb = function(){
+    mongoose.connect('mongodb://localhost/test', {useNewUrlParser: true});
+    const db = mongoose.connection;
+    
+    db.on('error', console.error.bind(console, 'mongo connection error ctrl + c'));
+    db.once('open', () => {
+        console.log('connecting...');
+        mongoose.disconnect();
+    });
+
+    db.on('close', function(){
+        console.log('disconnected.');
     })
 }
