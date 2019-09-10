@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+var ChatLog = require('./schema')
 
 module.exports.checkName = function(name){
     if((name === null) 
@@ -53,23 +54,61 @@ module.exports.checkRoomClients = function(inClientsNum){
 }
 
 module.exports.getNow = function(){
-    var d = new Date()
-    var hour = d.getHours();
-    var min = d.getMinutes();
-    var sec = d.getSeconds();
+    var dt = new Date()
+    var hour = this.zeroPadding(dt.getHours(),2);
+    var min = this.zeroPadding(dt.getMinutes(),2);
+    var sec = this.zeroPadding(dt.getSeconds(),2);
 
     var time = "[" + hour + ":" + min + ":" + sec + "]";
     return time;
 }
 
-module.exports.connectDb = function(){
-    mongoose.connect('mongodb://localhost/test', {useNewUrlParser: true});
+module.exports.getDateTime = function(){
+    var dt = new Date();
+
+    var year = dt.getFullYear();
+    // 1月が0,12月が11のため
+    var month = dt.getMonth() + 1;
+    var date = dt.getDate();
+
+    var hour = dt.getHours();
+    var min = dt.getMinutes();
+    var sec = dt.getSeconds();
+
+    var dateTime = year + "-" + month + "-" + date + " " + hour + ":" + min + ":" + sec;
+    return dateTime;
+}
+
+module.exports.zeroPadding = function(num, length){
+    return ('00' + num).slice(-length);
+}
+
+module.exports.insertDb = function(user){
+    mongoose.connect('mongodb://localhost/chat', {useNewUrlParser: true});
     const db = mongoose.connection;
     
     db.on('error', console.error.bind(console, 'mongo connection error ctrl + c'));
     db.once('open', () => {
-        console.log('connecting...');
-        mongoose.disconnect();
+        console.log('connected');
+
+        // // スキーマからモデルを作成
+        // const ChatLog = mongoose.model('ChatLog', logSchema);
+
+        // なにかいれてる
+        const saveLog = new ChatLog({
+            room: user.room,
+            name: user.name,
+            msg: user.msg,
+            state: user.state,
+            classify: user.classify,
+            createdAt: user.dateTime
+        });
+
+        saveLog.save((err, logs) => {
+            if (err) console.error(err);
+            mongoose.disconnect();
+            console.log(logs);
+        });
     });
 
     db.on('close', function(){

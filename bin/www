@@ -76,14 +76,31 @@ chat = io.sockets.on('connection', function(client) {
           client.join(client.room);
           console.log('member : ' + participant);
           
+          // 現在時刻の取得
+          var time = myFunc.getNow();
+
+          // 現在の日付と時刻の取得
+          var dateTime = myFunc.getDateTime();
+
           // 入室メッセージの表示
           var enterMsg = myFunc.checkInRoomMsg(client.room, client.name);
-          chat.to(client.room).emit('chat', {
-            msg : enterMsg, 
-            name: participant, 
+
+          // オブジェクトの作成
+          var submitData = {
+            room: client.room,
+            msg : enterMsg,
+            pt : participant, 
+            name: client.name, 
             state: 'Enter', 
-            classify: 'System'
-          });
+            classify: 'System',
+            dateTime: dateTime
+          }
+
+          // Roomのクライアントにメッセージを送信
+          chat.to(client.room).emit('chat', submitData);
+
+          // DBに書き込み
+          myFunc.insertDb(submitData);
 
           console.log("Entering " + client.name + " Room No." + client.room);
 
@@ -100,17 +117,32 @@ chat = io.sockets.on('connection', function(client) {
 
   // クライアントの発言
   client.on('chat', function(msg){
-      if(myFunc.checkMsgString(msg) && myFunc.checkMsgLength(msg) && myFunc.checkMsgSpace(msg)){
+      if(myFunc.checkMsgString(msg) 
+      && myFunc.checkMsgLength(msg) 
+      && myFunc.checkMsgSpace(msg)){
 
           // 現在時刻の取得
           var time = myFunc.getNow();
 
+          // 現在の日付と時刻の取得
+          var dateTime = myFunc.getDateTime();
+
+          // オブジェクトの作成
+          var submitData = {
+            room: client.room,
+            msg : time + ' ' + client.name + ' > ' + msg, 
+            pt : participant,
+            name : client.name,
+            state: 'Chat',
+            classify: 'User',
+            dateTime: dateTime
+          }
+
           // Roomのクライアントにメッセージを送信
-          chat.to(client.room).emit('chat', 
-            {msg : time + ' ' + client.name + ' > ' + msg, 
-              name : client.name,
-              classify: 'User'
-          });
+          chat.to(client.room).emit('chat', submitData);
+
+          // DBに書き込み
+          myFunc.insertDb(submitData);
       }
   });
 
@@ -123,12 +155,26 @@ chat = io.sockets.on('connection', function(client) {
       var nameIndex = participant.indexOf(client.name);
       if (nameIndex > -1) participant.splice(nameIndex, 1);
 
-      chat.to(client.room).emit('chat', {
+      // 現在の日付と時刻の取得
+      var dateTime = myFunc.getDateTime();
+
+      // Create Object
+      var submitData = {
+        room: client.room,
         msg : leaveMsg, 
-        name: participant, 
+        pt : participant,
+        name: client.name, 
         state: 'Leave',
-        classify: 'System'
-      });
+        classify: 'System',
+        dateTime: dateTime
+      };
+
+      // Roomのクライアントにメッセージを送信
+      chat.to(client.room).emit('chat', submitData);
+
+      // DBに書き込み
+      myFunc.insertDb(submitData);
+      
       console.log("Leave " + client.name + " from Room No." + client.room);
   });
 

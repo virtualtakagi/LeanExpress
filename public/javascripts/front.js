@@ -47,8 +47,8 @@ socket.on('chat', function(user){
         dispMsg.setAttribute("id","system");
         // メンバー反映
         $('.clients').children().remove();
-        for(var i = 0; i < user.name.length; i++){
-            $('.clients').append('<p>' + user.name[i] + '</p>');
+        for(var i = 0; i < user.pt.length; i++){
+            $('.clients').append('<p>' + user.pt[i] + '</p>');
         }
     } else {
         // Systemまたは自分以外の発言
