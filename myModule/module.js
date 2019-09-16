@@ -84,34 +84,36 @@ module.exports.zeroPadding = function(num, length){
 }
 
 module.exports.insertDb = function(user){
+    // DBに接続する
     mongoose.connect('mongodb://localhost/chat', {useNewUrlParser: true});
     const db = mongoose.connection;
     
     db.on('error', console.error.bind(console, 'mongo connection error ctrl + c'));
     db.once('open', () => {
-        console.log('connected');
 
-        // // スキーマからモデルを作成
-        // const ChatLog = mongoose.model('ChatLog', logSchema);
+        // オブジェクトを生成する
+        const saveLog = this.setDbObject(user);
 
-        // なにかいれてる
-        const saveLog = new ChatLog({
-            room: user.room,
-            name: user.name,
-            msg: user.msg,
-            state: user.state,
-            classify: user.classify,
-            createdAt: user.dateTime
-        });
-
+        // DBに保存する
         saveLog.save((err, logs) => {
             if (err) console.error(err);
+            // close
             mongoose.disconnect();
             console.log(logs);
         });
     });
-
-    db.on('close', function(){
-        console.log('disconnected.');
-    })
 }
+
+module.exports.setDbObject = function(user) {
+
+    const saveLog = new ChatLog({
+        room: user.room,
+        name: user.name,
+        msg: user.msg,
+        state: user.state,
+        classify: user.classify,
+    });
+
+    return saveLog;
+}
+

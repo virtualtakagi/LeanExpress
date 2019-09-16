@@ -151,4 +151,44 @@ describe('UnitTest', function(){
         console.log(testFunc.getNow());
     });
 
+    it('DBのスキーマのオブジェクトが返ってくること', function(){
+        var submitData = {
+            room: 1,
+            msg : 'test Message',
+            pt : [1,2,3], 
+            name: 'TestUser', 
+            state: 'Enter', 
+            classify: 'System',
+            dateTime: Date.now()
+          }
+        
+        var obj = testFunc.setDbObject(submitData);
+
+        it('roomが数値であること',function(obj){
+            chai.assert.isNumber(obj.room);
+        });
+
+        it('nameが文字列であること', function(obj){
+            chai.assert.isString(obj.name);
+        });
+
+        it('msgが文字列であること', function(obj){
+            chai.assert.isString(obj.msg);
+        });
+
+        it('stateが文字列であること', function(obj){
+            chai.assert.isString(obj.state);
+        });
+
+        it('classifyが文字列であること', function(obj){
+            chai.assert.isString(obj.classify);
+        });
+
+        it('dateTimeがDate型であること', function(obj){
+            chai.assert.deepEqual(typeof obj.dateTime, date);
+        });
+
+
+    })
+
 });

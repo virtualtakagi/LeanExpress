@@ -2,13 +2,18 @@ var socket = io();
 var myName = "";
 var inRoomClients = [];
 
-// サーバーからconnectedを受信したら、入室するルームを指定する
+// サーバーからconnectedを受信したら、入室するルームと名前を通知する
 socket.on('inputRoom', function(){
-    var room = "1";
+    var room = 1;
     myName = prompt("input userName");
     if (myName !== null) myName.textContent;
     socket.emit('checkRoom', {room: room, name: myName});
 });
+
+// Room入室を許可されたらメッセージ欄を全削除
+socket.on('allowEntry', function(){
+    $('#message').children().remove();
+})
 
 // Roomが満員だったら
 socket.on('overCapacity', function(){
@@ -28,13 +33,19 @@ socket.on('websocket', function(method){
 });
 
 // 入力メッセージの送信処理
-$('#btn').on('click', function(e) {
+$('#send').on('click', function(e) {
     e.preventDefault();
     const msg = $('#form [name=text]').val();
     msg.textContent;
     socket.emit('chat', msg);
     $('#form [name=text]').val("");
 });
+
+// 切断処理
+$('#disconnect').on('click', function(e) {
+    socket.emit('mdisconnect');
+    console.log('disconnet.');
+})
 
 // メッセージ出力処理
 socket.on('chat', function(user){

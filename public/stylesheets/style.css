@@ -32,9 +32,9 @@ body {
   border:1px solid #AAA;
 }
 
-#btn {
+#send , #disconnect{
   margin: 10px 0;
-  display: block;
+  display: inline-block;
   text-transform: uppercase;
   font-weight: bold;
   background: #282c2f;

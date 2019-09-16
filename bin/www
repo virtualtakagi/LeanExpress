@@ -43,7 +43,7 @@ chat = io.sockets.on('connection', function(client) {
 
   client.emit('inputRoom');
 
-  // クライアントに接続成功を送信する
+  // クライアントから名前とRoomを受け取ったら
   client.on('checkRoom', function(user){
     clientsNum = 0;
     
@@ -52,67 +52,68 @@ chat = io.sockets.on('connection', function(client) {
       if(error) throw err;
       clientsNum = clients.length;
 
-        // Room入室処理
-        if(myFunc.checkRoom(user.room) 
-          && myFunc.checkName(user.name)){
-            
-          // Room人数が制限に引っかかっているか
-          if(!myFunc.checkRoomClients(clientsNum)) {
-            // 定員オーバーならDisconnect
-            client.emit('overCapacity')
-            client.disconnect(true);
-            console.log('Room: ' + user.room + 'is Capacity Over');
-            return;
-          }
-
-          // server側に保存
-          client.name = user.name;
-          client.room = user.room;
-
-          // room入室者の追加
-          participant.push(client.name);
-
-          //room入室
-          client.join(client.room);
-          console.log('member : ' + participant);
-          
-          // 現在時刻の取得
-          var time = myFunc.getNow();
-
-          // 現在の日付と時刻の取得
-          var dateTime = myFunc.getDateTime();
-
-          // 入室メッセージの表示
-          var enterMsg = myFunc.checkInRoomMsg(client.room, client.name);
-
-          // オブジェクトの作成
-          var submitData = {
-            room: client.room,
-            msg : enterMsg,
-            pt : participant, 
-            name: client.name, 
-            state: 'Enter', 
-            classify: 'System',
-            dateTime: dateTime
-          }
-
-          // Roomのクライアントにメッセージを送信
-          chat.to(client.room).emit('chat', submitData);
-
-          // DBに書き込み
-          myFunc.insertDb(submitData);
-
-          console.log("Entering " + client.name + " Room No." + client.room);
-
-          // キャンセルボタンをクリック
-        } else if(user.name === null){
+        // Room人数のチェック
+        if(!myFunc.checkRoomClients(clientsNum)) {
+          // 定員オーバーならDisconnect
+          client.emit('overCapacity');
           client.disconnect(true);
-          
-          // 再度入力させる
-        } else {
-          client.emit('inputRoom');
+          console.log('Room: ' + user.room + 'is Capacity Over');
+          return;
         }
     });
+
+    // Room番号のフォーマットチェック
+    if(!myFunc.checkRoom(user.room)){
+      // 再入力
+      client.emit('inputRoom');
+      console.log('error room number');
+      return;
+    };
+
+    // ユーザー名のフォーマットチェック
+    if(!myFunc.checkName(user.name)){
+      // 再入力
+      client.emit('inputRoom');
+      return;
+    } else if(user.name === null){
+      // nullなら切断
+      client.disconnect(true);
+    }
+
+    // クライアントに入室を通知
+    client.emit('allowEntry');
+
+    // server側に保存
+    client.name = user.name;
+    client.room = user.room;
+
+    // room入室者の追加
+    participant.push(client.name);
+
+    //room入室
+    client.join(client.room);
+    console.log('member : ' + participant);
+    
+    // 入室メッセージの表示
+    var enterMsg = myFunc.checkInRoomMsg(client.room, client.name);
+
+    // オブジェクトの作成
+    var submitData = {
+      room: client.room,
+      msg : enterMsg,
+      pt : participant, 
+      name: client.name, 
+      state: 'Enter', 
+      classify: 'System',
+    }
+
+    // Roomのクライアントにメッセージを送信
+    chat.to(client.room).emit('chat', submitData);
+
+    // DBに書き込み
+    myFunc.insertDb(submitData);
+
+    console.log("Entering " + client.name + " Room No." + client.room);
   });
 
   // クライアントの発言
@@ -124,9 +125,6 @@ chat = io.sockets.on('connection', function(client) {
           // 現在時刻の取得
           var time = myFunc.getNow();
 
-          // 現在の日付と時刻の取得
-          var dateTime = myFunc.getDateTime();
-
           // オブジェクトの作成
           var submitData = {
             room: client.room,
@@ -135,7 +133,6 @@ chat = io.sockets.on('connection', function(client) {
             name : client.name,
             state: 'Chat',
             classify: 'User',
-            dateTime: dateTime
           }
 
           // Roomのクライアントにメッセージを送信
@@ -146,17 +143,16 @@ chat = io.sockets.on('connection', function(client) {
       }
   });
 
-  // クライアントの退室
+  // クライアントの退室を検知
   client.on('disconnect', function() {
-      client.leave(client.room);
+
+      // undefinedなら処理しない
+      if(client.room === undefined || client.name === undefined) return;
 
       // 退室メッセージの表示
       var leaveMsg = myFunc.checkLeaveRoomMsg(client.room, client.name);
       var nameIndex = participant.indexOf(client.name);
       if (nameIndex > -1) participant.splice(nameIndex, 1);
-
-      // 現在の日付と時刻の取得
-      var dateTime = myFunc.getDateTime();
 
       // Create Object
       var submitData = {
@@ -166,7 +162,6 @@ chat = io.sockets.on('connection', function(client) {
         name: client.name, 
         state: 'Leave',
         classify: 'System',
-        dateTime: dateTime
       };
 
       // Roomのクライアントにメッセージを送信
@@ -174,6 +169,46 @@ chat = io.sockets.on('connection', function(client) {
 
       // DBに書き込み
       myFunc.insertDb(submitData);
+      
+      // 退出
+      client.leave(client.room);
+      // 切断
+      client.disconnect(true);
+      
+      console.log("Leave " + client.name + " from Room No." + client.room);
+  });
+
+    // クライアント側から手動での退室
+    client.on('mdisconnect', function() {
+
+      // undefinedなら処理しない
+      if(client.room === undefined || client.name === undefined) return;
+
+      // 退室メッセージの表示
+      var leaveMsg = myFunc.checkLeaveRoomMsg(client.room, client.name);
+      var nameIndex = participant.indexOf(client.name);
+      if (nameIndex > -1) participant.splice(nameIndex, 1);
+
+      // Create Object
+      var submitData = {
+        room: client.room,
+        msg : leaveMsg, 
+        pt : participant,
+        name: client.name, 
+        state: 'Leave',
+        classify: 'System',
+      };
+
+      // Roomのクライアントにメッセージを送信
+      chat.to(client.room).emit('chat', submitData);
+
+      // DBに書き込み
+      myFunc.insertDb(submitData);
+      
+      // 退出
+      client.leave(client.room);
+      // 切断
+      client.disconnect(true);
       
       console.log("Leave " + client.name + " from Room No." + client.room);
   });
@@ -184,6 +219,7 @@ chat = io.sockets.on('connection', function(client) {
     chat.emit('websocket', method);
   })
 });
+
 /**
  * Normalize a port into a number, string, or false.
  */
