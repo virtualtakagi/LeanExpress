@@ -64,27 +64,27 @@ describe('UnitTest', function(){
         chai.assert.isNotOk(testFunc.checkRoom(4));
     });
 
-    it('room名が1桁以上の場合フォーマットエラー', function(){
+    it('room名が1桁以上の場合false', function(){
         chai.assert.isNotOk(testFunc.checkRoom(12));
     });
 
-    it('room名が英数字以外の場合フォーマットエラー', function(){
+    it('room名が英数字以外の場合false', function(){
         chai.assert.isNotOk(testFunc.checkRoom("aaaa"));
     });
 
-    it('room名が小数点の場合フォーマットエラー', function(){
+    it('room名が小数点の場合false', function(){
         chai.assert.isNotOk(testFunc.checkRoom(1.45));
     });
 
-    // it('ユーザーが入室した時のメッセージが正しいフォーマットであること', function(){
+    // it('ユーザーが入室した時のメッセージのフォーマット', function(){
     //     chai.assert.match(testFunc.checkInRoomMsg("123","user_456"), /Room No.[0-9]{1,4} > user_[0-9]{1,4} さんが入室しました/);
     // });
 
-    // it('ユーザーが退出した時のメッセージが正しいフォーマットであること', function(){
+    // it('ユーザーが退出した時のメッセージのフォーマット', function(){
     //     chai.assert.match(testFunc.checkLeaveRoomMsg("123","user_456"), /Room No.[0-9]{1,4} > user_[0-9]{1,4} さんが退出しました/);
     // });
 
-    it('メッセージが1文字以上140文字以下であること', function(){
+    it('メッセージが1文字以上140文字以下でtrue', function(){
         chai.assert.isOk(testFunc.checkMsgLength("test message"));
     });
 
@@ -150,45 +150,5 @@ describe('UnitTest', function(){
         chai.assert.isOk(testFunc.getNow());
         console.log(testFunc.getNow());
     });
-
-    it('DBのスキーマのオブジェクトが返ってくること', function(){
-        var submitData = {
-            room: 1,
-            msg : 'test Message',
-            pt : [1,2,3], 
-            name: 'TestUser', 
-            state: 'Enter', 
-            classify: 'System',
-            dateTime: Date.now()
-          }
-        
-        var obj = testFunc.setDbObject(submitData);
-
-        it('roomが数値であること',function(obj){
-            chai.assert.isNumber(obj.room);
-        });
-
-        it('nameが文字列であること', function(obj){
-            chai.assert.isString(obj.name);
-        });
-
-        it('msgが文字列であること', function(obj){
-            chai.assert.isString(obj.msg);
-        });
-
-        it('stateが文字列であること', function(obj){
-            chai.assert.isString(obj.state);
-        });
-
-        it('classifyが文字列であること', function(obj){
-            chai.assert.isString(obj.classify);
-        });
-
-        it('dateTimeがDate型であること', function(obj){
-            chai.assert.deepEqual(typeof obj.dateTime, date);
-        });
-
-
-    })
 
 });
